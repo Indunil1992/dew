@@ -22,7 +22,7 @@
         "children": [],
         "isRemovable": true,
         "filePath": "dew/lambda.js",
-        "code": "let AWS = require('aws-sdk');\nconst sns = new AWS.SNS();\n\nexports.handler = function (event, context, callback) {\n    sns.publish({\n        Message: 'hi ',\n        MessageAttributes: {},\n        MessageStructure: 'String',\n        TopicArn: 'arn:aws:sns:us-east-1:318300609668:new123'\n    }).promise()\n        .then(data => {\n            // your code goes here\n        })\n        .catch(err => {\n            // error handling goes here\n        });\n\n    callback(null, { \"message\": \"Successfully executed\" });\n}",
+        "code": "let AWS = require('aws-sdk');\nlet SL_AWS = require('slappforge-sdk-aws');\nconst sqs = new SL_AWS.SQS(AWS);\n\nexports.handler = function (event, context, callback) {\n    sqs.receiveMessage({\n        QueueUrl: `https://sqs.${process.env.AWS_REGION}.amazonaws.com/${process.env.SIGMA_AWS_ACC_ID}/dss`,\n        AttributeNames: ['All'],\n        MaxNumberOfMessages: '1',\n        VisibilityTimeout: '30',\n        WaitTimeSeconds: '0'\n    }).promise()\n        .then(receivedMsgData => {\n            if (!!(receivedMsgData) && !!(receivedMsgData.Messages)) {\n                let receivedMessages = receivedMsgData.Messages;\n                receivedMessages.forEach(message => {\n                    // your logic to access each message through out the loop. Each message is available under variable message \n                    // within this block\n                });\n            } else {\n                // No messages to process\n            }\n        })\n        .catch(err => {\n            // error handling goes here\n        });\n\n    callback(null, { \"message\": \"Successfully executed\" });\n}",
         "config": {
           "runtime": "nodejs8.10",
           "handler": "handler",
@@ -30,7 +30,16 @@
           "memory": 128,
           "layers": []
         },
-        "triggers": []
+        "triggers": [],
+        "testCases": {
+          "f3458b0b-3db5-46c4-bc2e-dfaae7d86a6e": {
+            "id": "f3458b0b-3db5-46c4-bc2e-dfaae7d86a6e",
+            "name": "Test event",
+            "functionId": "369e80cd-424e-459e-940a-db72e50c1e70",
+            "event": "{\"key1\": \"value1\", \"key2\": \"value2\", \"key3\": \"value3\"}",
+            "eventTemplate": "hello-world"
+          }
+        }
       }
     },
     "rootNode": "de174664-a284-4366-9b73-8d4e6618b852",
@@ -50,6 +59,33 @@
           "snsType": 0,
           "topicDisplayName": "123new",
           "subscriptions": []
+        }
+      },
+      "sqsdss": {
+        "name": "sqsdss",
+        "type": "SQS",
+        "config": {
+          "mode": 0,
+          "existing": false,
+          "name": "dss",
+          "url": "https://sqs.us-east-1.amazonaws.com/318300609668/dss",
+          "selectedRegion": "us-east-1",
+          "deliveryDelay": 0,
+          "deliveryDelayUnit": "seconds",
+          "useRedrivePolicy": false,
+          "useSSE": false,
+          "kmsCustomerMasterKey": "default",
+          "accountId": "318300609668",
+          "dataKeyReusePeriod": 5,
+          "queueType": "standardQueue",
+          "defaultVisibilityTimeout": 30,
+          "defaultVisibilityTimeoutUnit": "seconds",
+          "messageRetentionPeriod": 4,
+          "messageRetentionPeriodUnit": "days",
+          "maximumMessageSize": 256,
+          "receiveMessageWaitTime": 0,
+          "deadLetterQueueName": "",
+          "contentBasedDeduplication": false
         }
       }
     },
@@ -75,6 +111,13 @@
           "version": "2.176.0",
           "dev": true,
           "notRemovable": false
+        },
+        "slappforge-sdk-aws": {
+          "name": "slappforge-sdk-aws",
+          "language": "javascript",
+          "version": "0.0.5",
+          "dev": false,
+          "notRemovable": false
         }
       }
     }
@@ -86,7 +129,7 @@
     "projectRegion": "us-east-1",
     "platform": "AWS",
     "platformRegions": {},
-    "lastSave": 1571819044524
+    "lastSave": 1571819589455
   },
   "VCS_STATE": {
     "provider": "GitHub",
